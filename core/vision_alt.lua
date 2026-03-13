@@ -1,34 +1,38 @@
 -- core/vision_alt.lua
 require("core.palette")
 local ffi = require("ffi")
-
-VISION = {}
-VISION.angle = 0
+VISION = { angle = 0, buffer = nil, img = nil, ptr = nil }
 
 function VISION.Update(dt)
     VISION.angle = VISION.angle + dt
 end
 
+function VISION.Init()
+    local w, h = love.graphics.getDimensions()
+    VISION.buffer = love.image.newImageData(w, h)
+    VISION.img = love.graphics.newImage(VISION.buffer)
+    VISION.ptr = ffi.cast("uint32_t*", VISION.buffer:getPointer())
+end
+
 function VISION.Draw(viewW, viewH, cellSize)
     local w, h = love.graphics.getDimensions()
-    
-    -- 1. Sync the 3D "Projection Power" with the 2D Zoom
-    -- This ensures the cube grows at the same rate as the background grid
-    local baseFocal = 500
-    local focalLength = baseFocal * cellSize
-    
-    -- 2. The world-mid is our anchor point in world-space pixels
+    if not VISION.ptr then VISION.Init() end
+
+    -- Clear the buffer (Black/Transparent)
+    ffi.fill(VISION.ptr, w * h * 4, 0)
+
+    local focalLength = 500 * cellSize
     local worldMid = (NODE.SIZE / 2) * cellSize
     local relCenterX = worldMid - CAMERA.x
     local relCenterY = worldMid - CAMERA.y
+    local zOffset = 2.5
     
-    local cubeSize, numSlices = 64, 64
-    local zOffset = 2.5 
-
     local cosA, sinA = math.cos(VISION.angle), math.sin(VISION.angle)
     local cosB, sinB = math.cos(VISION.angle * 0.5), math.sin(VISION.angle * 0.5)
 
-    love.graphics.setColor(PALETTE.ACTIVE)
+    local color = 0xFFBB9933 -- AABBGGRR (Blue-ish)
+
+    local cubeSize, numSlices = 64, 64
 
     for z = 0, numSlices - 1 do
         local sliceOffset = z * cubeSize * NODE.SIZE
@@ -56,13 +60,19 @@ function VISION.Draw(viewW, viewH, cellSize)
                         local screenX = (rx / finalZ) * focalLength + relCenterX
                         local screenY = (ry / finalZ) * focalLength + relCenterY
                         
-                        -- Atom size scales with both distance (1/z) and engine zoom
-                        local atomSize = (1 / finalZ) * cellSize * 1.5
-                        
-                        love.graphics.rectangle("fill", screenX, screenY, atomSize, atomSize)
+                        -- Inside the loop, after calculating screenX and screenY:
+                        local ix, iy = math.floor(screenX), math.floor(screenY)
+                        if ix >= 0 and ix < w and iy >= 0 and iy < h then
+                            -- Direct pixel write: Index = (y * width) + x
+                            VISION.ptr[iy * w + ix] = color
+                        end
                     end
                 end
             end
         end
     end
+    -- Upload to VRAM once
+    VISION.img:replacePixels(VISION.buffer)
+    love.graphics.setColor(1, 1, 1)
+    love.graphics.draw(VISION.img, 0, 0)
 end
