@@ -12,9 +12,9 @@ function love.load()
     NODE.Init(SETTINGS.GRID_BUFFER_SIZE)
     local midCoord = math.floor(SETTINGS.GRID_BUFFER_SIZE / 2)
     REGION.Apply(midCoord, midCoord, midCoord + 5, midCoord + 5, NODE.FLAGS.SOLID, "SET")
-    BENCH.Run("Full Grid Fill", function()
-        REGION.Apply(1, 1, SETTINGS.GRID_BUFFER_SIZE, SETTINGS.GRID_BUFFER_SIZE, NODE.FLAGS.LIT, "SET")
-    end)
+    --BENCH.Run("Full Grid Fill", function()
+    --    REGION.Apply(1, 1, SETTINGS.GRID_BUFFER_SIZE, SETTINGS.GRID_BUFFER_SIZE, NODE.FLAGS.LIT, "SET")
+    --end)
     local midIdx = (midCoord - 1) * SETTINGS.GRID_BUFFER_SIZE + midCoord
     local myData = { status = "Giga-Ogre Online", kernel = "LÖVE 11.5", arch = "FFI" }
     PORTAL.WalkAndInject(myData, midIdx)
@@ -44,15 +44,17 @@ end
 function love.draw()
     local cellSize = SETTINGS.CELL_SIZE
     local w, h = love.graphics.getDimensions()
-    local viewW = math.ceil(w / cellSize)
-    local viewH = math.ceil(h / cellSize)
+    local viewW, viewH = math.ceil(w / cellSize), math.ceil(h / cellSize)
 
-    BENCH.Run("VISION.Draw", function()
-        VISION.Draw(viewW, viewH, cellSize)
+    -- 1. Draw the 2D "Background" World (Static/Efficient)
+    BENCH.Run("2D Pass", function()
+        VISION.Draw2D(viewW, viewH, cellSize)
     end)
-    -- Debug Overlay
-    -- VISION.DrawHover(cellSize)
-    -- VISION.DrawDebug(cellSize)
+
+    -- 2. Draw the 3D "Ogre" Projection (Dynamic Overlay)
+    BENCH.Run("3D Pass", function()
+        VISION.Draw3D(cellSize)
+    end)
 end
 
 function love.keypressed(key)
