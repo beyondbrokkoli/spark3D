@@ -1,9 +1,9 @@
 -- core/input.lua
 INPUT = {}
-function INPUT.ToIdx(pixelX, pixelY, cellSize)
-    local size = NODE.SIZE
-    local gridX = math.floor(pixelX / cellSize) + 1
-    local gridY = math.floor(pixelY / cellSize) + 1
+function INPUT.ToIdx(pixelX, pixelY, zoom)
+    local size = NODE.STRIDE
+    local gridX = math.floor(pixelX / zoom) + 1
+    local gridY = math.floor(pixelY / zoom) + 1
     if gridX < 1 or gridX > size or gridY < 1 or gridY > size then
         return nil
     end
@@ -16,9 +16,9 @@ function INPUT.ToIdx(pixelX, pixelY, cellSize)
     return idx
 end
 
-function INPUT.GetMouseGrid(cellSize)
+function INPUT.GetMouseGrid(zoom)
     local mx, my = love.mouse.getPosition()
     local worldX = mx + CAMERA.x
     local worldY = my + CAMERA.y
-    return INPUT.ToIdx(worldX, worldY, cellSize)
+    return INPUT.ToIdx(worldX, worldY, zoom)
 end

@@ -4,10 +4,12 @@ CAMERA = {
     y = 0,
 }
 
-function CAMERA.GetViewport(viewW, viewH, cellSize)
-    local startX = math.floor(CAMERA.x / cellSize) + 1
-    local startY = math.floor(CAMERA.y / cellSize) + 1
-    local offsetX = CAMERA.x % cellSize
-    local offsetY = CAMERA.y % cellSize
-    return startX, startY, offsetX, offsetY
+function CAMERA.Clamp(worldSize, zoom)
+    local screenW, screenH = love.graphics.getDimensions()
+    local maxPixel = worldSize * zoom
+
+    -- Allow the camera to move freely.
+    -- Only clamp if you want to prevent seeing "outside" the 4096 grid.
+    CAMERA.x = math.max(-screenW, math.min(CAMERA.x, maxPixel))
+    CAMERA.y = math.max(-screenH, math.min(CAMERA.y, maxPixel))
 end

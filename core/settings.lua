@@ -1,15 +1,14 @@
 -- core/settings.lua
 SETTINGS = {
-    -- 4096 * 4096 = 16MB (Very safe for VM)
-    -- 8192 * 8192 = 64MB (High end)
-    GRID_BUFFER_SIZE = 4096,
-
-    CELL_SIZE = 1, -- Zoom level (higher = less GPU strain)
-    CAMERA_SPEED = 10000,
-
+    VOXEL_POOL_SIZE = 4096,
+    ZOOM = 1,
+    FOCAL_LENGTH = 50,
+    Z_OFFSET = 50,
+    CAMERA_SPEED = 1000,
+    NEAR_PLANE = 0.1,
+    FAR_PLANE = 500,
     SIDEBAR_WIDTH = 250,
     TOPBAR_HEIGHT = 50,
-
     KEYS = {
         UP    = "w",
         DOWN  = "s",
