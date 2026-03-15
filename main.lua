@@ -118,7 +118,7 @@ function love.draw()
         love.graphics.setColor(1, 1, 1)
     end
 
-    love.graphics.print("WASD: Move | Objects: " .. NODE.objCount, 10, 10)
+    -- love.graphics.print("WASD: Move | Objects: " .. NODE.objCount, 10, 10)
 end
 
 function love.update(dt)
