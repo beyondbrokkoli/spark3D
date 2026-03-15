@@ -116,8 +116,8 @@ function VISION.Draw3D(zoom, screenW, screenH)
                             -- We calculate the perspective factor in world units first.
                             local finalZ = rz + zOffset
                             if finalZ > SETTINGS.NEAR_PLANE and finalZ < SETTINGS.FAR_PLANE then
-                                local perspective = focalLength / finalZ
-
+                                -- local perspective = focalLength / finalZ
+                                local perspective = 1.0
                                 -- 3. The "Zero-Drift" Anchor:
                                 -- We project the local offset, add it to the world position,
                                 -- and THEN apply the 2D zoom/Camera transform.

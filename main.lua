@@ -17,48 +17,88 @@ function love.load()
     NODE.Init(SETTINGS.VOXEL_POOL_SIZE)
     VISION.Init()
 
-    local dim = 12 -- Template size (12x12x12)
+    local dim = 12
+    local bigDim = 60
+    local r = (dim / 2) - 0.5
 
+    -- Precise Memory Management
+    local currentOffset = 0
 
-    -- 1. CUBE TEMPLATE (at offset 0)
+    -- 1. CUBE
+    local cubeBase = currentOffset
     for z = 0, dim - 1 do
         for y = 0, dim - 1 do
             for x = 0, dim - 1 do
-                NODE.BUFFER[NODE.GetIndex(x, y, z, dim, dim)] = NODE.FLAGS.SOLID
+                NODE.BUFFER[cubeBase + NODE.GetIndex(x, y, z, dim, dim)] = NODE.FLAGS.SOLID
             end
         end
     end
+    currentOffset = currentOffset + (dim * dim * NODE.STRIDE)
 
-    -- 2. PYRAMID TEMPLATE
-    local pyramidBase = (dim * dim * NODE.STRIDE) + 100
+    -- 2. PYRAMID
+    local pyrBase = currentOffset
     for z = 0, dim - 1 do
         local inset = math.floor(z / 2)
         for y = inset, (dim - 1) - inset do
             for x = inset, (dim - 1) - inset do
-                local idx = pyramidBase + NODE.GetIndex(x, y, z, dim, dim)
-                NODE.BUFFER[idx] = NODE.FLAGS.SOLID
+                NODE.BUFFER[pyrBase + NODE.GetIndex(x, y, z, dim, dim)] = NODE.FLAGS.SOLID
+            end
+        end
+    end
+    currentOffset = currentOffset + (dim * dim * NODE.STRIDE)
+
+    -- 3. SPHERE
+    local sphereBase = currentOffset
+    for z = 0, dim - 1 do
+        for y = 0, dim - 1 do
+            for x = 0, dim - 1 do
+                local dx, dy, dz = x - r, y - r, z - r
+                if (dx*dx + dy*dy + dz*dz) <= (r*r) then
+                    NODE.BUFFER[sphereBase + NODE.GetIndex(x, y, z, dim, dim)] = NODE.FLAGS.SOLID
+                end
+            end
+        end
+    end
+    currentOffset = currentOffset + (dim * dim * NODE.STRIDE)
+
+    -- 4. OCTAHEDRON
+    local octBase = currentOffset
+    for z = 0, dim - 1 do
+        for y = 0, dim - 1 do
+            for x = 0, dim - 1 do
+                local dx, dy, dz = math.abs(x-r), math.abs(y-r), math.abs(z-r)
+                if (dx + dy + dz) <= r then
+                    NODE.BUFFER[octBase + NODE.GetIndex(x, y, z, dim, dim)] = NODE.FLAGS.SOLID
+                end
+            end
+        end
+    end
+    currentOffset = currentOffset + (dim * dim * NODE.STRIDE)
+
+    -- 5. THE MONOLITH
+    local monoBase = currentOffset
+    for z = 0, bigDim - 1 do
+        for y = 0, bigDim - 1 do
+            for x = 0, bigDim - 1 do
+                NODE.BUFFER[monoBase + NODE.GetIndex(x, y, z, bigDim, bigDim)] = NODE.FLAGS.SOLID
             end
         end
     end
 
-    -- 3. SPAWN THE MATRIX
-    -- The "Great Green Pyramid" at center
-    NODE.CreateObject(400, 400, 0, dim, dim, dim, 0xFF00FF44, pyramidBase)
+    -- SPAWN OBJECTS
+    -- Massive reference points (one at center, one offset)
+    --NODE.CreateObject(800, 800, 0, bigDim, bigDim, bigDim, 0xFF444444, monoBase, NODE.FLAGS.FIXED)
+    --NODE.CreateObject(1600, 400, 0, bigDim, bigDim, bigDim, 0xFF333333, monoBase, NODE.FLAGS.FIXED)
+    -- gemini created square sized pentagram black holes in my cpu :D
+    NODE.CreateObject(800, 800, 0, bigDim, bigDim, bigDim, 0xFF444444, monoBase)
+    NODE.CreateObject(1600, 400, 0, bigDim, bigDim, bigDim, 0xFF333333, monoBase)
 
-    -- Scattered Neon Cubes
-    for i = 1, 15 do
-        local x = math.random(100, 1500)
-        local y = math.random(100, 1500)
-        -- Variations: some cubes, some smaller pyramids
-        local isPyramid = math.random() > 0.7
-        local color = isPyramid and 0xFF00FFFF or (i % 2 == 0 and 0xFFCCAA33 or 0xFFFF00FF)
-        local offset = isPyramid and pyramidBase or 0
-
-        NODE.CreateObject(x, y, 0, dim, dim, dim, color, offset)
+    local bases = {cubeBase, pyrBase, sphereBase, octBase}
+    for i = 1, 40 do
+        local x, y = math.random(200, 2000), math.random(200, 2000)
+        local base = bases[math.random(#bases)]
+        NODE.CreateObject(x, y, 0, dim, dim, dim, 0xFF00AAFF + (i * 5000), base)
     end
-    -- In main.lua, inside love.load()
-    local floorColor = 0xFF222222
-    NODE.CreateObject(400, 600, 0, 60, 1, 60, floorColor, 0, NODE.FLAGS.FIXED)
 end
 
 function love.draw()
@@ -91,8 +131,10 @@ function love.update(dt)
         end
     end
 
-    -- Movement and camera logic (Safe to run during resize)
-    local adjustedSpeed = SETTINGS.CAMERA_SPEED * (SETTINGS.ZOOM / 1) * dt
+    -- Calculate speed with a floor (Min Speed)
+    local rawSpeed = SETTINGS.CAMERA_SPEED * (1 / SETTINGS.ZOOM)
+    local adjustedSpeed = math.max(SETTINGS.MIN_CAMERA_SPEED, rawSpeed) * dt
+
     if love.keyboard.isDown("w") then CAMERA.y = CAMERA.y - adjustedSpeed end
     if love.keyboard.isDown("s") then CAMERA.y = CAMERA.y + adjustedSpeed end
     if love.keyboard.isDown("a") then CAMERA.x = CAMERA.x - adjustedSpeed end
@@ -143,7 +185,12 @@ function love.quit()
 end
 
 function love.keypressed(key)
-    if key == "v" then
-        VISION.ToggleDolly()
+    if key == "f" then
+        local isFullscreen = love.window.getFullscreen()
+        love.window.setFullscreen(not isFullscreen)
+    -- elseif key == "v" then
+        -- VISION.ToggleDolly()
+    elseif key == "escape" then
+        love.event.quit()
     end
 end

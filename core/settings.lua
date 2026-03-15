@@ -1,10 +1,11 @@
 -- core/settings.lua
 SETTINGS = {
-    VOXEL_POOL_SIZE = 4096,
+    VOXEL_POOL_SIZE = 6000,
     ZOOM = 1,
     FOCAL_LENGTH = 50,
     Z_OFFSET = 50,
-    CAMERA_SPEED = 1000,
+    CAMERA_SPEED = 800,
+    MIN_CAMERA_SPEED = 650,
     NEAR_PLANE = 0.1,
     FAR_PLANE = 500,
     SIDEBAR_WIDTH = 250,
